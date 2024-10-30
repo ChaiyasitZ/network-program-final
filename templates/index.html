@@ -23,35 +23,38 @@
         document.getElementById('load-ports').addEventListener('click', async () => {
             const ip = document.getElementById('ip').value;
             const community = document.getElementById('community').value;
-
+        
             const response = await fetch(`/snmp/ports/${ip}/${community}`);
             const ports = await response.json();
-
+        
             const switchPortsDiv = document.getElementById('switch-ports');
-            switchPortsDiv.innerHTML = ''; // เคลียร์พอร์ตเก่า
-
+            switchPortsDiv.innerHTML = ''; // Clear previous ports
+        
             if (ports.error) {
                 alert(ports.error);
                 return;
             }
-
-            for (const [portIndex, status] of Object.entries(ports)) {
+        
+            for (const [portIndex, portData] of Object.entries(ports)) {
                 const portDiv = document.createElement('div');
-                portDiv.className = status === '1' ? 'port up' : 'port down'; // สถานะเริ่มต้น
-                portDiv.textContent = `Port ${portIndex} - ${status === '1' ? 'Up' : 'Down'}`;
-                portDiv.dataset.port = portIndex; // เก็บหมายเลขพอร์ต
+                const portName = portData.name || 'Unknown Port'; // Fallback if name is missing
+                portDiv.className = portData.status === '1' ? 'port up' : 'port down'; // Initial status
+                portDiv.textContent = `Port ${portName} (Port ${portIndex}) - ${portData.status === '1' ? 'Up' : 'Down'}`;
+                portDiv.dataset.port = portIndex; // Store port number
+                portDiv.dataset.name = portName; // Store port name
                 portDiv.addEventListener('click', togglePort);
                 switchPortsDiv.appendChild(portDiv);
             }
         });
-
+        
         async function togglePort(event) {
             const portDiv = event.currentTarget;
             const port = portDiv.dataset.port;
+            const portName = portDiv.dataset.name; // Retrieve the port name
             const ip = document.getElementById('ip').value;
             const community = document.getElementById('community').value;
             const currentStatus = portDiv.classList.contains('up') ? 'down' : 'up';
-
+        
             const response = await fetch(`/snmp/control/${ip}/${community}/${port}`, {
                 method: 'POST',
                 headers: {
@@ -67,11 +70,11 @@
                 if (currentStatus === 'up') {
                     portDiv.classList.remove('down');
                     portDiv.classList.add('up');
-                    portDiv.textContent = `Port ${port} - Up`;
+                    portDiv.textContent = `Port ${portName} (Port ${port}) - Up`; // Display port name
                 } else {
                     portDiv.classList.remove('up');
                     portDiv.classList.add('down');
-                    portDiv.textContent = `Port ${port} - Down`;
+                    portDiv.textContent = `Port ${portName} (Port ${port}) - Down`; // Display port name
                 }
             }
         }

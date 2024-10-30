@@ -33,14 +33,17 @@ async def control_port(ip, community, port):
     elif errorStatus:
         print(f"Error Status: {errorStatus.prettyPrint()} at {errorIndex}")
         return jsonify({"error": str(errorStatus.prettyPrint())}), 400
-
+    else:
+        print(f"Successfully set port {port} to {'up' if new_status == 1 else 'down'}")
 
     return jsonify({"message": "Port status updated successfully."})
 
 @app.route('/snmp/ports/<ip>/<community>', methods=['GET'])
 async def get_ports(ip, community):
     oid_ifTable = '1.3.6.1.2.1.2.2.1.7'  # OID สำหรับ ifAdminStatus ของทุกพอร์ต
-    errorIndication, errorStatus, errorIndex, varBinds = await bulk_cmd(
+    oid_ifDescr = '1.3.6.1.2.1.2.2.1.2'  # OID สำหรับ ifDescr (ชื่อพอร์ต)
+
+    errorIndication, errorStatus, errorIndex, varBinds_admin = await bulk_cmd(
         SnmpEngine(),
         CommunityData(community),
         await UdpTransportTarget.create((ip, 161)),
@@ -50,15 +53,39 @@ async def get_ports(ip, community):
         ObjectType(ObjectIdentity(oid_ifTable))
     )
 
+    errorIndication_descr, errorStatus_descr, errorIndex_descr, varBinds_descr = await bulk_cmd(
+        SnmpEngine(),
+        CommunityData(community),
+        await UdpTransportTarget.create((ip, 161)),
+        ContextData(),
+        0,  # Non-repeaters
+        10,  # Max-repetitions
+        ObjectType(ObjectIdentity(oid_ifDescr))
+    )
+
     if errorIndication:
         return jsonify({"error": str(errorIndication)}), 400
     elif errorStatus:
         return jsonify({"error": str(errorStatus.prettyPrint())}), 400
+    elif errorIndication_descr:
+        return jsonify({"error": str(errorIndication_descr)}), 400
+    elif errorStatus_descr:
+        return jsonify({"error": str(errorStatus_descr.prettyPrint())}), 400
     else:
         results = {}
-        for name, value in varBinds:
+        # Create a mapping for port names
+        port_names = {}
+        for name, value in varBinds_descr:
             port_index = str(name).split('.')[-1]  # ดึงหมายเลขพอร์ต
-            results[port_index] = str(value)  # เก็บสถานะพอร์ต
+            port_names[port_index] = str(value)  # เก็บชื่อพอร์ต
+
+        for name, value in varBinds_admin:
+            port_index = str(name).split('.')[-1]  # ดึงหมายเลขพอร์ต
+            results[port_index] = {
+                "status": str(value),  # เก็บสถานะพอร์ต
+                "name": port_names.get(port_index, "Unknown Port")  # เก็บชื่อพอร์ต
+            }
+
         return jsonify(results)  # ส่งกลับข้อมูลสถานะพอร์ต
 
 if __name__ == '__main__':
