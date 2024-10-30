@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNMP Port Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>SNMP Interface Control</h1>
+        <input type="text" id="ip" placeholder="Device IP Address" />
+        <input type="text" id="community" placeholder="Community String" />
+        <button id="load-ports">Load Ports</button>
+
+        <h2>Switch Control</h2>
+        <div id="switch-ports">
+            <!-- พอร์ตจะถูกสร้างขึ้นที่นี่ -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('load-ports').addEventListener('click', async () => {
+            const ip = document.getElementById('ip').value;
+            const community = document.getElementById('community').value;
+
+            const response = await fetch(`/snmp/ports/${ip}/${community}`);
+            const ports = await response.json();
+
+            const switchPortsDiv = document.getElementById('switch-ports');
+            switchPortsDiv.innerHTML = ''; // เคลียร์พอร์ตเก่า
+
+            if (ports.error) {
+                alert(ports.error);
+                return;
+            }
+
+            for (const [portIndex, status] of Object.entries(ports)) {
+                const portDiv = document.createElement('div');
+                portDiv.className = status === '1' ? 'port up' : 'port down'; // สถานะเริ่มต้น
+                portDiv.textContent = `Port ${portIndex} - ${status === '1' ? 'Up' : 'Down'}`;
+                portDiv.dataset.port = portIndex; // เก็บหมายเลขพอร์ต
+                portDiv.addEventListener('click', togglePort);
+                switchPortsDiv.appendChild(portDiv);
+            }
+        });
+
+        async function togglePort(event) {
+            const portDiv = event.currentTarget;
+            const port = portDiv.dataset.port;
+            const ip = document.getElementById('ip').value;
+            const community = document.getElementById('community').value;
+            const currentStatus = portDiv.classList.contains('up') ? 'down' : 'up';
+
+            const response = await fetch(`/snmp/control/${ip}/${community}/${port}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: currentStatus })
+            });
+            const data = await response.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                // Toggle UI
+                if (currentStatus === 'up') {
+                    portDiv.classList.remove('down');
+                    portDiv.classList.add('up');
+                    portDiv.textContent = `Port ${port} - Up`;
+                } else {
+                    portDiv.classList.remove('up');
+                    portDiv.classList.add('down');
+                    portDiv.textContent = `Port ${port} - Down`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
