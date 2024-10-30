@@ -11,30 +11,43 @@
         <h1>SNMP Interface Control</h1>
         <input type="text" id="ip" placeholder="Device IP Address" />
         <input type="text" id="community" placeholder="Community String" />
-        <button id="load-ports">Load Ports</button>
+        <button id="load-device-info">Load Device Info</button>
 
+        <h2 id="device-name">Device Name: </h2> <!-- Display device name here -->
         <h2>Switch Control</h2>
         <div id="switch-ports">
-            <!-- พอร์ตจะถูกสร้างขึ้นที่นี่ -->
+            <!-- Ports will be created here -->
         </div>
     </div>
 
     <script>
-        document.getElementById('load-ports').addEventListener('click', async () => {
+        document.getElementById('load-device-info').addEventListener('click', async () => {
             const ip = document.getElementById('ip').value;
             const community = document.getElementById('community').value;
-        
-            const response = await fetch(`/snmp/ports/${ip}/${community}`);
-            const ports = await response.json();
-        
+
+            // Fetch the device name
+            const deviceResponse = await fetch(`/snmp/device-name/${ip}/${community}`);
+            const deviceData = await deviceResponse.json();
+
+            if (deviceData.error) {
+                alert(deviceData.error);
+                return;
+            }
+
+            // Display the device name
+            document.getElementById('device-name').textContent = `Device Name: ${deviceData.device_name}`;
+
+            // Fetch and display the ports
+            const portsResponse = await fetch(`/snmp/ports/${ip}/${community}`);
+            const ports = await portsResponse.json();
             const switchPortsDiv = document.getElementById('switch-ports');
             switchPortsDiv.innerHTML = ''; // Clear previous ports
-        
+
             if (ports.error) {
                 alert(ports.error);
                 return;
             }
-        
+
             for (const [portIndex, portData] of Object.entries(ports)) {
                 const portDiv = document.createElement('div');
                 const portName = portData.name || 'Unknown Port'; // Fallback if name is missing
@@ -46,7 +59,7 @@
                 switchPortsDiv.appendChild(portDiv);
             }
         });
-        
+
         async function togglePort(event) {
             const portDiv = event.currentTarget;
             const port = portDiv.dataset.port;
@@ -54,7 +67,7 @@
             const ip = document.getElementById('ip').value;
             const community = document.getElementById('community').value;
             const currentStatus = portDiv.classList.contains('up') ? 'down' : 'up';
-        
+
             const response = await fetch(`/snmp/control/${ip}/${community}/${port}`, {
                 method: 'POST',
                 headers: {

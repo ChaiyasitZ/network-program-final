@@ -88,5 +88,25 @@ async def get_ports(ip, community):
 
         return jsonify(results)  # ส่งกลับข้อมูลสถานะพอร์ต
 
+@app.route('/snmp/device-name/<ip>/<community>', methods=['GET'])
+async def get_device_name(ip, community):
+    oid_sysName = '1.3.6.1.2.1.1.5.0'  # OID for sysName (device name)
+    errorIndication, errorStatus, errorIndex, varBinds = await get_cmd(
+        SnmpEngine(),
+        CommunityData(community),
+        await UdpTransportTarget.create((ip, 161)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid_sysName))
+    )
+
+    if errorIndication:
+        return jsonify({"error": str(errorIndication)}), 400
+    elif errorStatus:
+        return jsonify({"error": str(errorStatus.prettyPrint())}), 400
+    else:
+        device_name = str(varBinds[0][1])
+        return jsonify({"device_name": device_name})
+
+
 if __name__ == '__main__':
     app.run(debug=True)
