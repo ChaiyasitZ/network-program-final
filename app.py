@@ -107,6 +107,32 @@ async def get_device_name(ip, community):
         device_name = str(varBinds[0][1])
         return jsonify({"device_name": device_name})
 
+@app.route('/snmp/uptime/<ip>/<community>', methods=['GET'])
+async def get_uptime(ip, community):
+    oid_sysUpTime = '1.3.6.1.2.1.1.3.0'  # OID for sysUpTime
+    errorIndication, errorStatus, errorIndex, varBinds = await get_cmd(
+        SnmpEngine(),
+        CommunityData(community),
+        await UdpTransportTarget.create((ip, 161)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid_sysUpTime))
+    )
+
+    if errorIndication:
+        return jsonify({"error": str(errorIndication)}), 400
+    elif errorStatus:
+        return jsonify({"error": str(errorStatus.prettyPrint())}), 400
+    else:
+        # Convert sysUpTime (in hundredths of a second) to a more readable format (e.g., days, hours, minutes)
+        uptime_hundredths = int(varBinds[0][1])
+        uptime_seconds = uptime_hundredths / 100
+        days = int(uptime_seconds // 86400)
+        hours = int((uptime_seconds % 86400) // 3600)
+        minutes = int((uptime_seconds % 3600) // 60)
+        seconds = int(uptime_seconds % 60)
+
+        readable_uptime = f"{days}d {hours}h {minutes}m {seconds}s"
+        return jsonify({"uptime": readable_uptime})
 
 if __name__ == '__main__':
     app.run(debug=True)
