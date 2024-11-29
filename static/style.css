@@ -1,48 +1,145 @@
+/* Base Styles */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
+    color: #333;
     margin: 0;
     padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
 
+/* Container */
 .container {
+    width: 100%;
     max-width: 600px;
-    margin: auto;
-    background: #fff;
+    background-color: #ffffff;
     padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-h1, h2 {
-    color: #333;
+/* Headers */
+h1, h3, h4 {
+    text-align: center;
+    margin-bottom: 15px;
 }
 
-input[type="text"] {
-    width: calc(100% - 22px);
+.text-center {
+    text-align: center;
+}
+
+/* Input and Buttons */
+.input-field {
+    width: 100%;
     padding: 10px;
-    margin-bottom: 10px;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    background-color: #007bff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+/* Device Info */
+.device-info {
+    color: #007bff;
+    margin: 5px 0;
+}
+
+/* Port Control Section */
+.ports {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
 }
 
 .port {
     padding: 10px;
-    margin: 5px 0;
-    background: #ddd;
+    background-color: #ddd;
+    color: #333;
+    border-radius: 5px;
     cursor: pointer;
-    text-align: center;
-    border-radius: 3px;
     transition: background-color 0.3s ease;
+    width: 100px;
+    text-align: center;
 }
 
 .port.up {
-    background-color: green;
+    background-color: #28a745;
     color: white;
 }
 
 .port.down {
-    background-color: red;
+    background-color: #dc3545;
     color: white;
 }
 
+/* Log Messages */
+.log-messages {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    max-height: 200px;
+    overflow-y: auto;
+    color: #333;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+}
+
+body.dark-mode .container {
+    background-color: #2c2f33;
+}
+
+body.dark-mode .input-field {
+    background-color: #3b3f45;
+    color: #f0f0f0;
+    border: 1px solid #555;
+}
+
+body.dark-mode .btn {
+    background-color: #7289da;
+}
+
+body.dark-mode .btn:hover {
+    background-color: #5b6eae;
+}
+
+body.dark-mode .port {
+    background-color: #555;
+    color: #f0f0f0;
+}
+
+body.dark-mode .port.up {
+    background-color: #4caf50;
+}
+
+body.dark-mode .port.down {
+    background-color: #e53935;
+}
+
+body.dark-mode .log-messages {
+    background-color: #3b3f45;
+    color: #f0f0f0;
+}

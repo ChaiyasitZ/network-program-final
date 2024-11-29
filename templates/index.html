@@ -8,144 +8,34 @@
 </head>
 <body>
     <div class="container">
-        <h1>SNMP Port Control</h1>
-        <input type="text" id="ip" placeholder="Device IP Address" />
-        <button id="load-device-info">Load Device Info</button>
+        <h1 class="text-center">SNMP Port Control</h1>
+        
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle">Toggle Dark Mode</button>
 
-        <h2 id="device-name">Device Name: </h2>
-        <h2 id="device-uptime">Uptime: Loading...</h2> <!-- Display uptime here -->
+        <div class="form-group">
+            <input type="text" class="input-field" id="ip" placeholder="Enter Device IP Address">
+        </div>
+        <button id="load-device-info" class="btn">Load Device Info</button>
 
-        <h2>Port Control</h2>
-        <div id="switch-ports">
+        <div class="text-center">
+            <h3 id="device-name" class="device-info">Device Name: Loading...</h3>
+            <p id="device-uptime" class="device-info">Uptime: Loading...</p>
+        </div>
+
+        <h4>Port Control</h4>
+        <div id="switch-ports" class="ports">
             <!-- Ports will be created here -->
         </div>
 
-        <h2>Log Messages</h2>
-        <div id="log-messages" style="border: 1px solid #ccc; padding: 10px; max-height: 150px; overflow-y: auto;">
+        <h4>Log Messages</h4>
+        <div id="log-messages" class="log-messages">
             <!-- Log messages will be displayed here -->
         </div>
-        <button id="clear-log">Clear Log</button> <!-- Button to clear log messages -->
+        <button id="clear-log" class="btn">Clear Log</button>
     </div>
 
-    <script>
-        async function fetchUptime() {
-            const ip = document.getElementById('ip').value;
-
-            try {
-                const response = await fetch(`/snmp/uptime/${ip}/private`); // Use the community string "private"
-                const data = await response.json();
-                
-                if (data.error) {
-                    document.getElementById('device-uptime').textContent = "Uptime: Error loading uptime";
-                } else {
-                    document.getElementById('device-uptime').textContent = `Uptime: ${data.uptime}`;
-                }
-            } catch (error) {
-                console.error("Failed to fetch uptime:", error);
-            }
-        }
-
-        document.getElementById('load-device-info').addEventListener('click', async () => {
-            const ip = document.getElementById('ip').value;
-            const community = 'private'; // Set the community string to "private"
-
-            // Clear previous log messages
-            document.getElementById('log-messages').innerHTML = '';
-
-            // Fetch the device name
-            const deviceResponse = await fetch(`/snmp/device-name/${ip}/${community}`);
-            const deviceData = await deviceResponse.json();
-
-            if (deviceData.error) {
-                alert(deviceData.error);
-                return;
-            }
-
-            // Display the device name
-            document.getElementById('device-name').textContent = `Device Name: ${deviceData.device_name}`;
-
-            // Start the uptime interval update
-            setInterval(fetchUptime, 5000); // Update uptime every 5 seconds
-
-            // Fetch and display the ports
-            const portsResponse = await fetch(`/snmp/ports/${ip}/${community}`);
-            const ports = await portsResponse.json();
-            const switchPortsDiv = document.getElementById('switch-ports');
-            switchPortsDiv.innerHTML = ''; // Clear previous ports
-
-            if (ports.error) {
-                alert(ports.error);
-                return;
-            }
-
-            for (const [portIndex, portData] of Object.entries(ports)) {
-                const portDiv = document.createElement('div');
-                const portName = portData.name || 'Unknown Port'; // Fallback if name is missing
-                portDiv.className = portData.status === '1' ? 'port up' : 'port down'; // Initial status
-                portDiv.textContent = `Port ${portName} (Port ${portIndex}) - ${portData.status === '1' ? 'Up' : 'Down'}`;
-                portDiv.dataset.port = portIndex; // Store port number
-                portDiv.dataset.name = portName; // Store port name
-                portDiv.addEventListener('click', togglePort);
-                switchPortsDiv.appendChild(portDiv);
-            }
-        });
-
-        async function togglePort(event) {
-            const portDiv = event.currentTarget;
-            const port = portDiv.dataset.port;
-            const portName = portDiv.dataset.name; // Retrieve the port name
-            const ip = document.getElementById('ip').value;
-            const currentStatus = portDiv.classList.contains('up') ? 'down' : 'up';
-
-            const response = await fetch(`/snmp/control/${ip}/private/${port}`, { // Use the community string "private"
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status: currentStatus })
-            });
-            const data = await response.json();
-            if (data.error) {
-                logMessage(`Error: ${data.error}`, 'error'); // Log error message
-            } else {
-                // Toggle UI
-                if (currentStatus === 'up') {
-                    portDiv.classList.remove('down');
-                    portDiv.classList.add('up');
-                    portDiv.textContent = `Port ${portName} (Port ${port}) - Up`; // Display port name
-                    logMessage(`Port ${portName} (Port ${port}) is now Up`, 'success'); // Log success message (green)
-                } else {
-                    portDiv.classList.remove('up');
-                    portDiv.classList.add('down');
-                    portDiv.textContent = `Port ${portName} (Port ${port}) - Down`; // Display port name
-                    logMessage(`Port ${portName} (Port ${port}) is now Down`, 'error'); // Log failure message (red)
-                }
-            }
-        }
-
-        function logMessage(message, type = 'info') {
-            const logDiv = document.getElementById('log-messages');
-            const logEntry = document.createElement('div');
-            const timestamp = new Date().toLocaleTimeString(); // Get current time
-            logEntry.textContent = `[${timestamp}] ${message}`;
-            
-            // Set color based on message type
-            if (type === 'error') {
-                logEntry.style.color = 'red'; // Red for errors
-            } else if (type === 'success') {
-                logEntry.style.color = 'green'; // Green for success
-            } else {
-                logEntry.style.color = 'black'; // Default color
-            }
-
-            logDiv.appendChild(logEntry);
-            logDiv.scrollTop = logDiv.scrollHeight; // Scroll to the bottom
-        }
-
-        // Clear log messages
-        document.getElementById('clear-log').addEventListener('click', () => {
-            document.getElementById('log-messages').innerHTML = ''; // Clear the log messages
-        });
-    </script>
+    <script src="{{ url_for('static', filename='theme-toggle.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
